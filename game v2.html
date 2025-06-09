@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Oedipus - The Card Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: #2c1810;
+            color: #d4b684;
+            font-family: 'Cinzel', serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2c1810;
+            padding: 10px 0;
+            text-align: center;
+            border-bottom: 1px solid rgba(212, 182, 132, 0.2);
+        }
+
+        .title {
+            font-size: 48px;
+            margin: 0;
+            padding: 0;
+            color: #d4b684;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            display: inline-flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .lightning {
+            font-size: 36px;
+            color: #d4b684;
+        }
+
+        .omega {
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            font-size: 60px;
+        }
+
+        .game-container {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 450px;
+            flex-shrink: 0;
+        }
+
+        .right-column {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .player-area {
+            background: rgba(44, 24, 16, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 150px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        .player-label {
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .player-label::after {
+            display: inline-block;
+            margin-left: 5px;
+            font-size: 28px;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .cards-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            min-height: 84px;
+            padding: 5px;
+        }
+
+        .card {
+            width: 60px;
+            height: 84px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: serif;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .card.hearts, .card.diamonds {
+            color: #cc0000;
+        }
+
+        .card.spades, .card.clubs {
+            color: #000;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .card-suit {
+            font-size: 24px;
+            margin-top: 5px;
+        }
+
+        .game-board {
+            background: #35654d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            transform: scale(0.9);
+            transform-origin: center center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 70px);
+            grid-template-rows: repeat(5, 98px);
+            gap: 8px;
+            background: #35654d;
+            padding: 15px;
+            border: 5px solid #2c1810;
+            border-radius: 5px;
+        }
+
+        .cell {
+            background: rgba(255,255,255,0.1);
+            border: 2px dashed #90a959;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .deck-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(44, 24, 16, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        .deck {
+            width: 60px;
+            height: 84px;
+            background: #2c1810;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            background-image: repeating-linear-gradient(
+                45deg,
+                #2c1810 0px,
+                #2c1810 20px,
+                #3c2820 20px,
+                #3c2820 40px
+            );
+        }
+
+        .deck-count {
+            font-size: 18px;
+            color: #d4b684;
+        }
+
+
+        .next-player-button {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #d4b684;
+            color: #2c1810;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 24px;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .next-player-button:hover {
+            background: #90a959;
+        }
+
+        .card.selected {
+            box-shadow: 0 0 10px 3px #90a959;
+            transform: scale(1.05);
+        }
+        .cell:hover {
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
+        }
+
+        .ai-toggle-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #d4b684;
+            color: #2c1810;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .ai-toggle-button:hover {
+            background: #90a959;
+        }
+
+        .ai-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(44, 24, 16, 0.9);
+            color: #d4b684;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-family: 'Cinzel', serif;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+            text-align: center;
+            border: 2px solid #d4b684;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .ai-notification.show {
+            opacity: 1;
+        }
+
+        @keyframes cardPickup {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .deck.ai-pickup {
+            animation: cardPickup 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">
+            <span class="lightning">⚡</span>
+            <span class="omega">Ω</span>EDIPUS
+            <span class="lightning">⚡</span>
+        </h1>
+    </div>
+
+    <div class="game-container">
+        <div class="left-column">
+            <div class="player-area" id="horizontal-player">
+                <div class="player-label">Horizontal Player to play...</div>
+                <div class="cards-container"></div>
+            </div>
+
+            <div class="deck-area">
+                <div class="deck"></div>
+                <div class="deck-count">52 cards remaining</div>
+            </div>
+
+            <div class="player-area" id="vertical-player">
+                <div class="player-label">Vertical Player</div>
+                <div class="cards-container"></div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="game-board">
+                <div class="grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <button class="next-player-button">Next Player Ready?</button>
+
+    <script>
+        // Game state
+        const gameState = {
+            currentPlayer: 'horizontal',
+            deck: [],
+            horizontalHand: [],
+            verticalHand: [],
+            gridCards: Array(5).fill(null).map(() => Array(5).fill(null)),
+            selectedCard: null,
+            isAIPlayer: false,
+            aiThinkingTime: 1000,
+            lastAIMoves: [],
+            aiStrategy: {
+                currentColumn: null,
+                buildingSequence: false
+            },
+            maxDepth: 3  // How many moves ahead to look
+        };
+
+        // Card utilities
+        function createCard(suit, value) {
+            return { suit, value };
+        }
+
+        function getSuitSymbol(suit) {
+            return {
+                'Hearts': '♥',
+                'Diamonds': '♦',
+                'Clubs': '♣',
+                'Spades': '♠'
+            }[suit];
+        }
+
+        function getCardValue(value) {
+            const values = {
+                'A': 1,  // Can also be 14 for high ace
+                'J': 11,
+                'Q': 12,
+                'K': 13
+            };
+            return values[value] || parseInt(value);
+        }
+
+        function evaluateSequence(cards) {
+            // Filter out empty cells
+            cards = cards.filter(card => card !== null);
+            if (cards.length < 2) return 0;
+            
+            // Convert values to numbers
+            let values = cards.map(card => getCardValue(card.value));
+            let valuesWithHighAce = [...values];
+            
+            // Replace Ace (1) with 14 for high ace evaluation
+            for (let i = 0; i < valuesWithHighAce.length; i++) {
+                if (valuesWithHighAce[i] === 1) {
+                    valuesWithHighAce[i] = 14;
+                }
+            }
+            
+            function getSequenceScore(arr) {
+                if (arr.length < 2) return 0;
+                
+                // Check if it's already a winning sequence
+                let ascending = true;
+                let descending = true;
+                
+                for (let i = 1; i < arr.length; i++) {
+                    if (arr[i] <= arr[i-1]) ascending = false;
+                    if (arr[i] >= arr[i-1]) descending = false;
+                }
+                
+                if ((ascending || descending) && arr.length >= 5) return 100;
+                
+                // Calculate how close the sequence is to being ordered
+                let score = 0;
+                
+                // Value consecutive cards
+                for (let i = 1; i < arr.length; i++) {
+                    const diff = Math.abs(arr[i] - arr[i-1]);
+                    if (diff === 1) {
+                        score += 5; // Bonus for consecutive cards
+                    } else if (diff === 2) {
+                        score += 3; // Smaller bonus for near-consecutive cards
+                    }
+                }
+                
+                // Bonus for sequence length
+                score += arr.length * 2;
+                
+                // Bonus for having more cards in the right order
+                if (ascending) {
+                    let orderedCount = 0;
+                    for (let i = 1; i < arr.length; i++) {
+                        if (arr[i] > arr[i-1]) orderedCount++;
+                    }
+                    score += orderedCount * 3;
+                }
+                
+                if (descending) {
+                    let orderedCount = 0;
+                    for (let i = 1; i < arr.length; i++) {
+                        if (arr[i] < arr[i-1]) orderedCount++;
+                    }
+                    score += orderedCount * 3;
+                }
+                
+                return score;
+            }
+            
+            // Return the better score between low ace and high ace evaluations
+            return Math.max(
+                getSequenceScore(values),
+                getSequenceScore(valuesWithHighAce)
+            );
+        }
+
+        function isValidSequence(cards) {
+            if (cards.some(card => !card)) return false;
+            
+            // Convert card values to numbers, considering Ace as both 1 and 14
+            let values = cards.map(card => getCardValue(card.value));
+            let valuesWithHighAce = [...values];
+            
+            // Replace Ace (1) with 14 for high ace check
+            for (let i = 0; i < valuesWithHighAce.length; i++) {
+                if (valuesWithHighAce[i] === 1) {
+                    valuesWithHighAce[i] = 14;
+                }
+            }
+            
+            // Check if array is in ascending or descending order, allowing for repeated numbers
+            function isAscending(arr) {
+                for (let i = 1; i < arr.length; i++) {
+                    if (arr[i] < arr[i-1]) return false;
+                }
+                return true;
+            }
+            
+            function isDescending(arr) {
+                for (let i = 1; i < arr.length; i++) {
+                    if (arr[i] > arr[i-1]) return false;
+                }
+                return true;
+            }
+            
+            // Check both regular values and values with high ace
+            return isAscending(values) || isDescending(values) ||
+                   isAscending(valuesWithHighAce) || isDescending(valuesWithHighAce);
+        }
+
+        function checkWinCondition() {
+            // Check horizontal sequences
+            for (let row = 0; row < 5; row++) {
+                if (isValidSequence(gameState.gridCards[row])) {
+                    return 'horizontal';
+                }
+            }
+            
+            // Check vertical sequences
+            for (let col = 0; col < 5; col++) {
+                const column = gameState.gridCards.map(row => row[col]);
+                if (isValidSequence(column)) {
+                    return 'vertical';
+                }
+            }
+            
+            return null;
+        }
+
+        // UI Creation
+        function createCardElement(card) {
+            const element = document.createElement('div');
+            element.className = `card ${card.suit.toLowerCase()}`;
+            
+            const value = document.createElement('div');
+            value.className = 'card-value';
+            value.textContent = card.value;
+            
+            const suit = document.createElement('div');
+            suit.className = 'card-suit';
+            suit.textContent = getSuitSymbol(card.suit);
+            
+            element.appendChild(value);
+            element.appendChild(suit);
+
+            // Add click handler for selection
+            element.addEventListener('click', () => {
+                if (gameState.selectedCard) {
+                    gameState.selectedCard.element.classList.remove('selected');
+                }
+                element.classList.add('selected');
+                gameState.selectedCard = { ...card, element };
+            });
+            
+            return element;
+        }
+
+        // Game setup
+        function initializeGame() {
+            // Remove any existing game end notification
+            const existingNotification = document.querySelector('.game-end-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // Reset game state
+            gameState.currentPlayer = 'horizontal';
+            gameState.deck = [];
+            gameState.horizontalHand = [];
+            gameState.verticalHand = [];
+            gameState.gridCards = Array(5).fill(null).map(() => Array(5).fill(null));
+            gameState.selectedCard = null;
+            gameState.isAIPlayer = false; // Start in 2-player mode
+            gameState.lastAIMoves = [];
+            gameState.aiStrategy = {
+                currentColumn: null,
+                buildingSequence: false
+            };
+            
+            initializeDeck();
+            dealInitialHands();
+            createGameBoard();
+            updateDeckCount();
+            renderHands();
+
+            // Add AI mode toggle button
+            const existingButton = document.querySelector('.ai-toggle-button');
+            if (existingButton) {
+                existingButton.remove();
+            }
+            const toggleButton = document.createElement('button');
+            toggleButton.textContent = 'Switch to AI Mode';
+            toggleButton.className = 'ai-toggle-button';
+            toggleButton.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                background: #2c1810;
+                color: #d4b684;
+                border: 2px solid #d4b684;
+                border-radius: 5px;
+                font-family: 'Cinzel', serif;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            `;
+            toggleButton.onmouseover = () => {
+                toggleButton.style.background = '#d4b684';
+                toggleButton.style.color = '#2c1810';
+            };
+            toggleButton.onmouseout = () => {
+                toggleButton.style.background = '#2c1810';
+                toggleButton.style.color = '#d4b684';
+            };
+            toggleButton.onclick = () => {
+                gameState.isAIPlayer = !gameState.isAIPlayer;
+                toggleButton.textContent = gameState.isAIPlayer ? 'Switch to 2 Player' : 'Switch to AI Mode';
+                // If switching to AI mode and it's vertical's turn, make AI move
+                if (gameState.isAIPlayer && gameState.currentPlayer === 'vertical') {
+                    makeAIMove();
+                }
+            };
+            document.body.appendChild(toggleButton);
+        }
+
+        function initializeDeck() {
+            const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            
+            gameState.deck = [];
+            for (const suit of suits) {
+                for (const value of values) {
+                    gameState.deck.push(createCard(suit, value));
+                }
+            }
+            
+            // Shuffle
+            for (let i = gameState.deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gameState.deck[i], gameState.deck[j]] = [gameState.deck[j], gameState.deck[i]];
+            }
+
+            // Place cards in corners and center
+            const cornerPositions = [
+                [0, 0],    // Top-left
+                [0, 4],    // Top-right
+                [2, 2],    // Center
+                [4, 0],    // Bottom-left
+                [4, 4]     // Bottom-right
+            ];
+
+            cornerPositions.forEach(([row, col]) => {
+                gameState.gridCards[row][col] = gameState.deck.pop();
+            });
+        }
+
+        function dealInitialHands() {
+            for (let i = 0; i < 5; i++) {
+                gameState.horizontalHand.push(gameState.deck.pop());
+                gameState.verticalHand.push(gameState.deck.pop());
+            }
+        }
+
+        function updateDeckCount() {
+            document.querySelector('.deck-count').textContent = 
+                `${gameState.deck.length} cards remaining`;
+        }
+
+        function renderHands() {
+            const horizontalPlayer = document.getElementById('horizontal-player');
+            const verticalPlayer = document.getElementById('vertical-player');
+            
+            // Clear existing cards
+            horizontalPlayer.querySelector('.cards-container').innerHTML = '';
+            verticalPlayer.querySelector('.cards-container').innerHTML = '';
+            
+            // Hide both hands initially
+            horizontalPlayer.style.display = 'none';
+            verticalPlayer.style.display = 'none';
+            
+            // In AI mode, never show vertical player's hand
+            if (gameState.isAIPlayer) {
+                if (gameState.currentPlayer === 'horizontal') {
+                    horizontalPlayer.style.display = 'block';
+                    gameState.horizontalHand.forEach(card => {
+                        const cardElement = createCardElement(card);
+                        horizontalPlayer.querySelector('.cards-container').appendChild(cardElement);
+                    });
+                    horizontalPlayer.querySelector('.player-label').textContent = 'Your turn...';
+                }
+                verticalPlayer.querySelector('.player-label').textContent = 'AI Player';
+            } else {
+                // Regular 2-player mode
+                if (gameState.currentPlayer === 'horizontal') {
+                    horizontalPlayer.style.display = 'block';
+                    gameState.horizontalHand.forEach(card => {
+                        const cardElement = createCardElement(card);
+                        horizontalPlayer.querySelector('.cards-container').appendChild(cardElement);
+                    });
+                    horizontalPlayer.querySelector('.player-label').textContent = 'Horizontal Player to play...';
+                    verticalPlayer.querySelector('.player-label').textContent = 'Vertical Player';
+                } else {
+                    verticalPlayer.style.display = 'block';
+                    gameState.verticalHand.forEach(card => {
+                        const cardElement = createCardElement(card);
+                        verticalPlayer.querySelector('.cards-container').appendChild(cardElement);
+                    });
+                    verticalPlayer.querySelector('.player-label').textContent = 'Vertical Player to play...';
+                    horizontalPlayer.querySelector('.player-label').textContent = 'Horizontal Player';
+                }
+            }
+        }
+
+        function createGameBoard() {
+            const grid = document.querySelector('.grid');
+            grid.innerHTML = '';
+            
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    // Add click handler for card placement
+                    cell.addEventListener('click', () => handleCellClick(row, col));
+                    
+                    // If there's a card in this position, show it
+                    const card = gameState.gridCards[row][col];
+                    if (card) {
+                        const cardElement = createCardElement(card);
+                        cardElement.style.pointerEvents = 'none'; // Prevent clicking placed cards
+                        cell.appendChild(cardElement);
+                    }
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function handleCellClick(row, col) {
+            console.log('Cell clicked:', { row, col, currentPlayer: gameState.currentPlayer, isAI: gameState.isAIPlayer });
+            
+            // If it's AI's turn and human tries to play, ignore
+            if (gameState.isAIPlayer && gameState.currentPlayer === 'vertical') {
+                console.log('Ignoring click during AI turn');
+                return;
+            }
+
+            if (!gameState.selectedCard) {
+                console.log('No card selected');
+                return;
+            }
+            
+            const currentCard = gameState.gridCards[row][col];
+            const selectedCard = gameState.selectedCard;
+            
+            // Check if placement is valid
+            if (currentCard && currentCard.suit !== selectedCard.suit) {
+                alert('You can only replace cards with the same suit!');
+                return;
+            }
+            
+            // Place the card
+            gameState.gridCards[row][col] = { ...selectedCard };
+            console.log('Card placed:', { row, col, card: selectedCard });
+            
+            // Remove card from player's hand
+            const hand = gameState.currentPlayer === 'horizontal' ? gameState.horizontalHand : gameState.verticalHand;
+            const cardIndex = hand.findIndex(c => c.suit === selectedCard.suit && c.value === selectedCard.value);
+            if (cardIndex !== -1) {
+                hand.splice(cardIndex, 1);
+            }
+            
+            // Clear selection
+            if (selectedCard.element) {
+                selectedCard.element.classList.remove('selected');
+            }
+            gameState.selectedCard = null;
+            
+            // Update the board
+            createGameBoard();
+            
+            // Check for win
+            const winner = checkWinCondition();
+            if (winner) {
+                console.log('Winner found:', winner);
+                const winnerName = winner === 'horizontal' ? 'Horizontal' : 'AI';
+                showGameEndNotification(`${winnerName} player wins!`);
+                return;
+            }
+            
+            // Switch turns
+            console.log('Switching turns after cell click');
+            switchToPlayerTurn();
+        }
+
+        function switchToPlayerTurn() {
+            console.log('switchToPlayerTurn called:', { 
+                currentPlayer: gameState.currentPlayer, 
+                isAI: gameState.isAIPlayer,
+                horizontalHandSize: gameState.horizontalHand.length,
+                verticalHandSize: gameState.verticalHand.length
+            });
+
+            if (gameState.currentPlayer === 'vertical') {
+                gameState.currentPlayer = 'horizontal';
+                console.log('Switched to horizontal player');
+                renderHands();
+            } else {
+                gameState.currentPlayer = 'vertical';
+                console.log('Switched to vertical player');
+                if (gameState.isAIPlayer) {
+                    console.log('Initiating AI move');
+                    // Ensure we're not already in an AI move
+                    clearTimeout(gameState.aiMoveTimeout);
+                    gameState.aiMoveTimeout = setTimeout(() => {
+                        console.log('Making AI move after delay');
+                        makeAIMove();
+                    }, 1000);
+                } else {
+                    renderHands();
+                }
+            }
+        }
+
+        function drawCard() {
+            console.log('Draw card called:', { currentPlayer: gameState.currentPlayer, isAI: gameState.isAIPlayer });
+            
+            if (gameState.deck.length === 0) {
+                console.log('Deck is empty');
+                return;
+            }
+            
+            // Check if current player's hand is at maximum size
+            const currentHand = gameState.currentPlayer === 'horizontal' ? 
+                gameState.horizontalHand : gameState.verticalHand;
+            if (currentHand.length >= 5) {
+                console.log('Hand is full');
+                return;
+            }
+            
+            const card = gameState.deck.pop();
+            if (gameState.currentPlayer === 'horizontal') {
+                gameState.horizontalHand.push(card);
+            } else {
+                gameState.verticalHand.push(card);
+            }
+            
+            // Update deck count and render
+            updateDeckCount();
+            renderHands();
+            
+            // Switch turns
+            console.log('Switching turns after draw');
+            switchToPlayerTurn();
+        }
+
+        function cloneGameState() {
+            return {
+                gridCards: gameState.gridCards.map(row => [...row]),
+                verticalHand: [...gameState.verticalHand],
+                horizontalHand: [...gameState.horizontalHand],
+                deck: [...gameState.deck]
+            };
+        }
+
+        function getAllPossibleMoves(state, isMaximizing) {
+            const moves = [];
+            const hand = isMaximizing ? state.verticalHand : state.horizontalHand;
+            
+            // Add all possible card placements
+            for (let cardIndex = 0; cardIndex < hand.length; cardIndex++) {
+                const card = hand[cardIndex];
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        const existingCard = state.gridCards[row][col];
+                        if (!existingCard || existingCard.suit === card.suit) {
+                            moves.push({
+                                type: 'place',
+                                cardIndex,
+                                row,
+                                col
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Add draw move if hand size < 5 and deck not empty
+            if (hand.length < 5 && state.deck.length > 0) {
+                moves.push({ type: 'draw' });
+            }
+
+            return moves;
+        }
+
+        function applyMove(state, move, isMaximizing) {
+            const newState = {
+                gridCards: state.gridCards.map(row => [...row]),
+                verticalHand: [...state.verticalHand],
+                horizontalHand: [...state.horizontalHand],
+                deck: [...state.deck]
+            };
+
+            const hand = isMaximizing ? newState.verticalHand : newState.horizontalHand;
+
+            if (move.type === 'place') {
+                const card = hand[move.cardIndex];
+                newState.gridCards[move.row][move.col] = card;
+                hand.splice(move.cardIndex, 1);
+            } else if (move.type === 'draw' && newState.deck.length > 0) {
+                const card = newState.deck.pop();
+                hand.push(card);
+            }
+
+            return newState;
+        }
+
+        function evaluateState(state) {
+            console.log('Evaluating state');
+            let score = 0;
+            
+            // Evaluate vertical sequences (AI's goal)
+            for (let col = 0; col < 5; col++) {
+                const column = state.gridCards.map(row => row[col]);
+                if (isValidSequence(column)) {
+                    console.log('Found winning vertical sequence');
+                    return 1000; // AI wins
+                }
+                score += evaluateSequence(column) * 2; // Weight vertical sequences more
+            }
+            
+            // Evaluate horizontal sequences (opponent's goal)
+            for (let row = 0; row < 5; row++) {
+                const rowCards = state.gridCards[row];
+                if (isValidSequence(rowCards)) {
+                    console.log('Found winning horizontal sequence');
+                    return -1000; // Opponent wins
+                }
+                score -= evaluateSequence(rowCards);
+            }
+            
+            // Value having cards in hand
+            score += state.verticalHand.length * 5;
+            
+            // Evaluate potential for future sequences
+            for (let col = 0; col < 5; col++) {
+                const column = state.gridCards.map(row => row[col]);
+                const emptySpaces = column.filter(card => !card).length;
+                if (emptySpaces > 0) {
+                    score += emptySpaces * 2; // Value columns with room to grow
+                }
+            }
+            
+            return score;
+        }
+
+        function minimax(state, depth, alpha, beta, isMaximizing) {
+            // Base cases: terminal state or maximum depth reached
+            if (depth === 0) {
+                return { score: evaluateState(state) };
+            }
+
+            const moves = getAllPossibleMoves(state, isMaximizing);
+            if (moves.length === 0) {
+                return { score: evaluateState(state) };
+            }
+
+            let bestMove = null;
+            let bestScore = isMaximizing ? -Infinity : Infinity;
+
+            for (const move of moves) {
+                const newState = applyMove(state, move, isMaximizing);
+                const result = minimax(newState, depth - 1, alpha, beta, !isMaximizing);
+                
+                if (isMaximizing) {
+                    if (result.score > bestScore) {
+                        bestScore = result.score;
+                        bestMove = move;
+                    }
+                    alpha = Math.max(alpha, bestScore);
+                } else {
+                    if (result.score < bestScore) {
+                        bestScore = result.score;
+                        bestMove = move;
+                    }
+                    beta = Math.min(beta, bestScore);
+                }
+                
+                if (beta <= alpha) break; // Alpha-beta pruning
+            }
+
+            return { move: bestMove, score: bestScore };
+        }
+
+        async function makeAIMove() {
+            console.log('makeAIMove called:', { 
+                isAI: gameState.isAIPlayer, 
+                currentPlayer: gameState.currentPlayer,
+                verticalHandSize: gameState.verticalHand.length
+            });
+
+            if (!gameState.isAIPlayer || gameState.currentPlayer !== 'vertical') {
+                console.log('Not AI turn - exiting makeAIMove');
+                return;
+            }
+
+            try {
+                const verticalPlayer = document.getElementById('vertical-player');
+                verticalPlayer.querySelector('.player-label').textContent = 'AI is thinking...';
+                
+                await new Promise(resolve => setTimeout(resolve, gameState.aiThinkingTime));
+                
+                // Double check it's still AI's turn after the delay
+                if (!gameState.isAIPlayer || gameState.currentPlayer !== 'vertical') {
+                    console.log('Turn changed during AI thinking');
+                    return;
+                }
+
+                // Use minimax to find the best move
+                const initialState = cloneGameState();
+                console.log('Starting minimax search');
+                const result = minimax(initialState, gameState.maxDepth, -Infinity, Infinity, true);
+                console.log('Minimax result:', result);
+                
+                if (!result.move) {
+                    console.log('No valid moves found');
+                    switchToPlayerTurn();
+                    return;
+                }
+
+                if (result.move.type === 'place') {
+                    console.log('AI placing card:', result.move);
+                    const card = gameState.verticalHand[result.move.cardIndex];
+                    
+                    // Record this move
+                    const moveKey = `${result.move.row},${result.move.col}`;
+                    gameState.lastAIMoves.push(moveKey);
+                    if (gameState.lastAIMoves.length > 5) {
+                        gameState.lastAIMoves.shift();
+                    }
+
+                    gameState.verticalHand.splice(result.move.cardIndex, 1);
+                    gameState.gridCards[result.move.row][result.move.col] = card;
+                    createGameBoard();
+                    
+                    const winner = checkWinCondition();
+                    if (winner) {
+                        alert(`${winner.charAt(0).toUpperCase() + winner.slice(1)} player wins!`);
+                        return;
+                    }
+                    
+                    showAINotification('AI placed a card');
+                } else if (result.move.type === 'draw') {
+                    console.log('AI drawing card');
+                    const deck = document.querySelector('.deck');
+                    deck.classList.add('ai-pickup');
+                    setTimeout(() => deck.classList.remove('ai-pickup'), 500);
+
+                    showAINotification('AI drew a card');
+                    drawCard();
+                    return; // drawCard will handle switching turns
+                }
+
+                verticalPlayer.querySelector('.player-label').textContent = 'AI Player';
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                console.log('AI move complete, switching turns');
+                switchToPlayerTurn();
+                
+            } catch (error) {
+                console.error('Error in AI move:', error);
+                switchToPlayerTurn();
+            }
+        }
+
+        // Add notification system
+        function showAINotification(message) {
+            // Remove any existing notification
+            const existingNotification = document.querySelector('.ai-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = 'ai-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(44, 24, 16, 0.9);
+                color: #d4b684;
+                padding: 20px 40px;
+                border-radius: 10px;
+                font-family: 'Cinzel', serif;
+                font-size: 24px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                z-index: 1000;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // Trigger animation
+            setTimeout(() => notification.style.opacity = '1', 10);
+
+            // Remove after delay
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 1500);
+        }
+
+        function showGameEndNotification(message) {
+            // Remove any existing notification first
+            const existingNotification = document.querySelector('.game-end-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            const notification = document.createElement('div');
+            notification.className = 'game-end-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(44, 24, 16, 0.95);
+                color: #d4b684;
+                padding: 40px 80px;
+                border-radius: 15px;
+                font-family: 'Cinzel', serif;
+                font-size: 36px;
+                text-align: center;
+                z-index: 1000;
+                box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            `;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            notification.appendChild(messageDiv);
+
+            const playAgainButton = document.createElement('button');
+            playAgainButton.textContent = 'Play Again';
+            playAgainButton.style.cssText = `
+                margin-top: 20px;
+                padding: 10px 20px;
+                font-family: 'Cinzel', serif;
+                font-size: 20px;
+                background: #d4b684;
+                color: #2c1810;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            `;
+            playAgainButton.onclick = () => {
+                notification.remove();
+                initializeGame();
+            };
+            notification.appendChild(playAgainButton);
+
+            document.body.appendChild(notification);
+        }
+
+        // Event listeners
+        document.querySelector('.deck').addEventListener('click', drawCard);
+
+        // Modify the next player button handler to support AI
+        document.querySelector('.next-player-button').addEventListener('click', async () => {
+            try {
+                // Switch current player
+                gameState.currentPlayer = gameState.currentPlayer === 'horizontal' ? 'vertical' : 'horizontal';
+                
+                // Render the new player's hand
+                renderHands();
+                
+                // Hide the next player button
+                document.querySelector('.next-player-button').style.display = 'none';
+                
+                // If it's AI's turn, make a move after a short delay
+                if (gameState.isAIPlayer && gameState.currentPlayer === 'vertical') {
+                    // Small delay to ensure UI updates before AI moves
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    makeAIMove();
+                }
+            } catch (error) {
+                console.error('Error in next player button handler:', error);
+                // Emergency recovery
+                if (gameState.isAIPlayer) {
+                    gameState.currentPlayer = 'horizontal';
+                    renderHands();
+                }
+            }
+        });
+
+        // Initialize game when the page loads
+        window.onload = function() {
+            initializeGame();
+        };
+
+        class MCTSNode {
+            constructor(state, parent = null, move = null) {
+                this.state = state;
+                this.parent = parent;
+                this.move = move;
+                this.children = [];
+                this.wins = 0;
+                this.visits = 0;
+                this.untriedMoves = this.getMoves();
+            }
+
+            getMoves() {
+                const moves = [];
+                const hand = this.state.currentPlayer === 'vertical' ? 
+                    this.state.verticalHand : this.state.horizontalHand;
+                
+                // Add card placements
+                for (let cardIndex = 0; cardIndex < hand.length; cardIndex++) {
+                    const card = hand[cardIndex];
+                    for (let row = 0; row < 5; row++) {
+                        for (let col = 0; col < 5; col++) {
+                            const existingCard = this.state.gridCards[row][col];
+                            if (!existingCard || existingCard.suit === card.suit) {
+                                moves.push({
+                                    type: 'place',
+                                    cardIndex,
+                                    row,
+                                    col
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // Add draw move if possible
+                if (hand.length < 5 && this.state.deck.length > 0) {
+                    moves.push({ type: 'draw' });
+                }
+
+                return moves;
+            }
+
+            UCTSelectChild() {
+                const C = 1.41; // UCT constant
+                let bestScore = -Infinity;
+                let bestChild = null;
+
+                for (const child of this.children) {
+                    if (child.visits === 0) return child;
+                    
+                    const score = (child.wins / child.visits) + 
+                        C * Math.sqrt(Math.log(this.visits) / child.visits);
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestChild = child;
+                    }
+                }
+
+                return bestChild;
+            }
+
+            cloneState() {
+                return {
+                    currentPlayer: this.state.currentPlayer,
+                    gridCards: this.state.gridCards.map(row => [...row]),
+                    verticalHand: [...this.state.verticalHand],
+                    horizontalHand: [...this.state.horizontalHand],
+                    deck: [...this.state.deck]
+                };
+            }
+        }
+
+        function applyMoveToState(state, move) {
+            const newState = {
+                currentPlayer: state.currentPlayer,
+                gridCards: state.gridCards.map(row => [...row]),
+                verticalHand: [...state.verticalHand],
+                horizontalHand: [...state.horizontalHand],
+                deck: [...state.deck]
+            };
+
+            const hand = state.currentPlayer === 'vertical' ? 
+                newState.verticalHand : newState.horizontalHand;
+
+            if (move.type === 'place') {
+                const card = hand[move.cardIndex];
+                newState.gridCards[move.row][move.col] = card;
+                hand.splice(move.cardIndex, 1);
+            } else if (move.type === 'draw' && newState.deck.length > 0) {
+                const card = newState.deck.pop();
+                hand.push(card);
+            }
+
+            // Switch player
+            newState.currentPlayer = state.currentPlayer === 'vertical' ? 
+                'horizontal' : 'vertical';
+
+            return newState;
+        }
+
+        function runMCTS(rootState, iterations = 100, timeLimit = 1000) {
+            const startTime = Date.now();
+            const root = new MCTSNode(rootState);
+
+            while (iterations > 0 && Date.now() - startTime < timeLimit) {
+                // Selection
+                let node = root;
+                while (node.untriedMoves.length === 0 && node.children.length > 0) {
+                    node = node.UCTSelectChild();
+                }
+
+                // Expansion
+                if (node.untriedMoves.length > 0) {
+                    const move = node.untriedMoves.pop();
+                    const newState = applyMoveToState(node.state, move);
+                    node = new MCTSNode(newState, node, move);
+                    node.parent.children.push(node);
+                }
+
+                // Simulation
+                let currentState = node.cloneState();
+                let plies = 0;
+                const maxPlies = 20;
+
+                while (!isGameOver(currentState) && plies < maxPlies) {
+                    const moves = new MCTSNode(currentState).getMoves();
+                    if (moves.length === 0) break;
+                    
+                    const randomMove = moves[Math.floor(Math.random() * moves.length)];
+                    currentState = applyMoveToState(currentState, randomMove);
+                    plies++;
+                }
+
+                // Backpropagation
+                let winner = evaluatePosition(currentState);
+                while (node !== null) {
+                    node.visits++;
+                    if ((winner > 0 && node.state.currentPlayer === 'vertical') ||
+                        (winner < 0 && node.state.currentPlayer === 'horizontal')) {
+                        node.wins++;
+                    }
+                    node = node.parent;
+                }
+
+                iterations--;
+            }
+
+            // Select best move
+            let bestChild = null;
+            let bestVisits = -1;
+            for (const child of root.children) {
+                if (child.visits > bestVisits) {
+                    bestVisits = child.visits;
+                    bestChild = child;
+                }
+            }
+
+            return bestChild ? bestChild.move : null;
+        }
+
+        function isGameOver(state) {
+            // Check horizontal sequences
+            for (let row = 0; row < 5; row++) {
+                if (isValidSequence(state.gridCards[row])) {
+                    return true;
+                }
+            }
+            
+            // Check vertical sequences
+            for (let col = 0; col < 5; col++) {
+                const column = state.gridCards.map(row => row[col]);
+                if (isValidSequence(column)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        function evaluatePosition(state) {
+            // First check for immediate wins/losses
+            // Check horizontal sequences (opponent's win condition)
+            for (let row = 0; row < 5; row++) {
+                if (isValidSequence(state.gridCards[row])) {
+                    return -1000; // Immediate loss, heavily penalize
+                }
+            }
+            
+            // Check vertical sequences (AI's win condition)
+            for (let col = 0; col < 5; col++) {
+                const column = state.gridCards.map(row => row[col]);
+                if (isValidSequence(column)) {
+                    return 1000; // Immediate win, heavily reward
+                }
+            }
+            
+            // Evaluate partial sequences
+            let score = 0;
+            
+            // Value vertical sequences more for AI
+            for (let col = 0; col < 5; col++) {
+                const column = state.gridCards.map(row => row[col]);
+                const cards = column.filter(card => card !== null);
+                if (cards.length >= 2) {
+                    const values = cards.map(card => getCardValue(card.value)).sort((a, b) => a - b);
+                    for (let i = 1; i < values.length; i++) {
+                        const diff = values[i] - values[i-1];
+                        if (diff === 1) score += 10; // Consecutive cards
+                        else if (diff === 2) score += 5; // One card gap
+                    }
+                }
+            }
+            
+            // Penalize helping opponent's sequences
+            for (let row = 0; row < 5; row++) {
+                const rowCards = state.gridCards[row].filter(card => card !== null);
+                if (rowCards.length >= 2) {
+                    const values = rowCards.map(card => getCardValue(card.value)).sort((a, b) => a - b);
+                    for (let i = 1; i < values.length; i++) {
+                        const diff = values[i] - values[i-1];
+                        if (diff === 1) score -= 15; // Heavily penalize helping opponent
+                        else if (diff === 2) score -= 8;
+                    }
+                }
+            }
+            
+            // Value having cards in hand
+            score += state.verticalHand.length * 3;
+            
+            return score / 100;
+        }
+
+        function makeAIMove() {
+            try {
+                const verticalPlayer = document.getElementById('vertical-player');
+                verticalPlayer.querySelector('.player-label').textContent = 'AI is thinking...';
+                
+                if (!gameState.isAIPlayer || gameState.currentPlayer !== 'vertical') {
+                    console.log('Not AI turn anymore');
+                    return;
+                }
+
+                // First check if we can win immediately
+                const possibleMoves = new MCTSNode(gameState).getMoves();
+                for (const move of possibleMoves) {
+                    if (move.type === 'place') {
+                        const tempState = applyMoveToState(gameState, move);
+                        // Check if this move wins
+                        for (let col = 0; col < 5; col++) {
+                            const column = tempState.gridCards.map(row => row[col]);
+                            if (isValidSequence(column)) {
+                                // Execute winning move
+                                const card = gameState.verticalHand[move.cardIndex];
+                                gameState.verticalHand.splice(move.cardIndex, 1);
+                                gameState.gridCards[move.row][move.col] = card;
+                                createGameBoard();
+                                showGameEndNotification('Vertical player wins!');
+                                return;
+                            }
+                        }
+                        // Check if this move would let opponent win
+                        let wouldLose = false;
+                        for (let row = 0; row < 5; row++) {
+                            if (isValidSequence(tempState.gridCards[row])) {
+                                wouldLose = true;
+                                break;
+                            }
+                        }
+                        if (wouldLose) {
+                            // Remove this move from consideration
+                            possibleMoves.splice(possibleMoves.indexOf(move), 1);
+                        }
+                    }
+                }
+
+                // If no immediate win and safe moves exist, use MCTS
+                const move = runMCTS(gameState, 300, 1500); // Increased iterations and time
+                
+                if (!move) {
+                    console.log('No valid moves found');
+                    switchToPlayerTurn();
+                    return;
+                }
+
+                if (move.type === 'place') {
+                    const card = gameState.verticalHand[move.cardIndex];
+                    
+                    // Record this move
+                    const moveKey = `${move.row},${move.col}`;
+                    gameState.lastAIMoves.push(moveKey);
+                    if (gameState.lastAIMoves.length > 5) {
+                        gameState.lastAIMoves.shift();
+                    }
+
+                    gameState.verticalHand.splice(move.cardIndex, 1);
+                    gameState.gridCards[move.row][move.col] = card;
+                    createGameBoard();
+                    
+                    const winner = checkWinCondition();
+                    if (winner) {
+                        showGameEndNotification(`${winner.charAt(0).toUpperCase() + winner.slice(1)} player wins!`);
+                        return;
+                    }
+                    
+                    showAINotification('AI placed a card');
+                } else if (move.type === 'draw') {
+                    const deck = document.querySelector('.deck');
+                    deck.classList.add('ai-pickup');
+                    setTimeout(() => deck.classList.remove('ai-pickup'), 500);
+
+                    showAINotification('AI drew a card');
+                    drawCard();
+                    return; // drawCard will handle switching turns
+                }
+
+                verticalPlayer.querySelector('.player-label').textContent = 'AI Player';
+                setTimeout(() => switchToPlayerTurn(), 500);
+                
+            } catch (error) {
+                console.error('Error in AI move:', error);
+                switchToPlayerTurn();
+            }
+        }
+    </script>
+</body>
+</html> 

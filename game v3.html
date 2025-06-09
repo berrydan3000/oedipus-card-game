@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Oedipus - The Card Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: #2c1810;
+            color: #d4b684;
+            font-family: 'Cinzel', serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2c1810;
+            padding: 10px 0;
+            text-align: center;
+            border-bottom: 1px solid rgba(212, 182, 132, 0.2);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .title {
+            font-size: 48px;
+            margin: 0;
+            padding: 0;
+            color: #d4b684;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            display: inline-flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .lightning {
+            font-size: 36px;
+            color: #d4b684;
+        }
+
+        .omega {
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            font-size: 60px;
+        }
+
+        .game-container {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 80px auto 0;  /* Added top margin to account for fixed header */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 450px;
+            flex-shrink: 0;
+        }
+
+        .right-column {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .player-area {
+            background: rgba(44, 24, 16, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 150px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            display: block !important;  /* Always show player areas */
+        }
+
+        .player-label {
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .player-label::after {
+            display: inline-block;
+            margin-left: 5px;
+            font-size: 28px;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .cards-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            min-height: 84px;
+            padding: 5px;
+        }
+
+        .card {
+            width: 60px;
+            height: 84px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: serif;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .card.hearts, .card.diamonds {
+            color: #cc0000;
+        }
+
+        .card.spades, .card.clubs {
+            color: #000;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .card-suit {
+            font-size: 24px;
+            margin-top: 5px;
+        }
+
+        .game-board {
+            background: #35654d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            transform: scale(0.9);
+            transform-origin: center center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 70px);
+            grid-template-rows: repeat(5, 98px);
+            gap: 8px;
+            background: #35654d;
+            padding: 15px;
+            border: 5px solid #2c1810;
+            border-radius: 5px;
+        }
+
+        .cell {
+            background: rgba(255,255,255,0.1);
+            border: 2px dashed #90a959;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .deck-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(44, 24, 16, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        .deck {
+            width: 60px;
+            height: 84px;
+            background: #2c1810;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            background-image: repeating-linear-gradient(
+                45deg,
+                #2c1810 0px,
+                #2c1810 20px,
+                #3c2820 20px,
+                #3c2820 40px
+            );
+        }
+
+        .deck-count {
+            font-size: 18px;
+            color: #d4b684;
+        }
+
+        .next-player-button {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #d4b684;
+            color: #2c1810;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 24px;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .next-player-button:hover {
+            background: #90a959;
+        }
+
+        .card.selected {
+            box-shadow: 0 0 10px 3px #90a959;
+            transform: scale(1.05);
+        }
+        .cell:hover {
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">
+            <span class="lightning">⚡</span>
+            <span class="omega">Ω</span>EDIPUS
+            <span class="lightning">⚡</span>
+        </h1>
+    </div>
+
+    <div class="game-container">
+        <div class="left-column">
+            <div class="player-area" id="horizontal-player">
+                <div class="player-label">Horizontal Player to play...</div>
+                <div class="cards-container"></div>
+            </div>
+
+            <div class="deck-area">
+                <div class="deck"></div>
+                <div class="deck-count">52 cards remaining</div>
+            </div>
+
+            <div class="player-area" id="vertical-player">
+                <div class="player-label">Vertical Player</div>
+                <div class="cards-container"></div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="game-board">
+                <div class="grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <button class="next-player-button">Next Player Ready?</button>
+
+    <script>
+        // Game state
+        const gameState = {
+            currentPlayer: 'horizontal',
+            deck: [],
+            horizontalHand: [],
+            verticalHand: [],
+            gridCards: Array(5).fill(null).map(() => Array(5).fill(null)),
+            selectedCard: null
+        };
+
+        // Card utilities
+        function createCard(suit, value) {
+            return { suit, value };
+        }
+
+        function getSuitSymbol(suit) {
+            return {
+                'Hearts': '♥',
+                'Diamonds': '♦',
+                'Clubs': '♣',
+                'Spades': '♠'
+            }[suit];
+        }
+
+        function getCardValue(value) {
+            const values = {
+                'A': 1,  // Can also be 14 for high ace
+                'J': 11,
+                'Q': 12,
+                'K': 13
+            };
+            return values[value] || parseInt(value);
+        }
+
+        function isValidSequence(cards) {
+            if (cards.some(card => !card)) return false;
+            
+            // Convert card values to numbers, considering Ace as both 1 and 14
+            let values = cards.map(card => getCardValue(card.value));
+            let valuesWithHighAce = [...values];
+            
+            // Replace Ace (1) with 14 for high ace check
+            for (let i = 0; i < valuesWithHighAce.length; i++) {
+                if (valuesWithHighAce[i] === 1) {
+                    valuesWithHighAce[i] = 14;
+                }
+            }
+            
+            // Check if array is in ascending or descending order, allowing for repeated numbers
+            function isAscending(arr) {
+                for (let i = 1; i < arr.length; i++) {
+                    if (arr[i] < arr[i-1]) return false;
+                }
+                return true;
+            }
+            
+            function isDescending(arr) {
+                for (let i = 1; i < arr.length; i++) {
+                    if (arr[i] > arr[i-1]) return false;
+                }
+                return true;
+            }
+            
+            // Check both regular values and values with high ace
+            return isAscending(values) || isDescending(values) ||
+                   isAscending(valuesWithHighAce) || isDescending(valuesWithHighAce);
+        }
+
+        function checkWinCondition() {
+            // Check horizontal sequences
+            for (let row = 0; row < 5; row++) {
+                if (isValidSequence(gameState.gridCards[row])) {
+                    return 'horizontal';
+                }
+            }
+            
+            // Check vertical sequences
+            for (let col = 0; col < 5; col++) {
+                const column = gameState.gridCards.map(row => row[col]);
+                if (isValidSequence(column)) {
+                    return 'vertical';
+                }
+            }
+            
+            return null;
+        }
+
+        // UI Creation
+        function createCardElement(card) {
+            const element = document.createElement('div');
+            element.className = `card ${card.suit.toLowerCase()}`;
+            
+            const value = document.createElement('div');
+            value.className = 'card-value';
+            value.textContent = card.value;
+            
+            const suit = document.createElement('div');
+            suit.className = 'card-suit';
+            suit.textContent = getSuitSymbol(card.suit);
+            
+            element.appendChild(value);
+            element.appendChild(suit);
+
+            // Add click handler for selection
+            element.addEventListener('click', () => {
+                if (gameState.selectedCard) {
+                    gameState.selectedCard.element.classList.remove('selected');
+                }
+                element.classList.add('selected');
+                gameState.selectedCard = { ...card, element };
+            });
+            
+            return element;
+        }
+
+        // Game setup
+        function initializeDeck() {
+            const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            
+            gameState.deck = [];
+            for (const suit of suits) {
+                for (const value of values) {
+                    gameState.deck.push(createCard(suit, value));
+                }
+            }
+            
+            // Shuffle
+            for (let i = gameState.deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gameState.deck[i], gameState.deck[j]] = [gameState.deck[j], gameState.deck[i]];
+            }
+
+            // Place initial cards in diagonal from top-left to bottom-right
+            const diagonalPositions = [
+                [0, 0], // Top left
+                [1, 1], // Second position
+                [2, 2], // Middle
+                [3, 3], // Fourth position
+                [4, 4]  // Bottom right
+            ];
+
+            for (const [row, col] of diagonalPositions) {
+                const card = gameState.deck.pop();
+                gameState.gridCards[row][col] = card;
+            }
+        }
+
+        function dealInitialHands() {
+            for (let i = 0; i < 5; i++) {
+                gameState.horizontalHand.push(gameState.deck.pop());
+                gameState.verticalHand.push(gameState.deck.pop());
+            }
+        }
+
+        function updateDeckCount() {
+            document.querySelector('.deck-count').textContent = 
+                `${gameState.deck.length} cards remaining`;
+        }
+
+        function renderHands() {
+            const horizontalPlayer = document.getElementById('horizontal-player');
+            const verticalPlayer = document.getElementById('vertical-player');
+            
+            // Clear existing cards
+            horizontalPlayer.querySelector('.cards-container').innerHTML = '';
+            verticalPlayer.querySelector('.cards-container').innerHTML = '';
+            
+            // Always show both hands
+            horizontalPlayer.style.display = 'block';
+            verticalPlayer.style.display = 'block';
+            
+            // Render current player's hand
+            if (gameState.currentPlayer === 'horizontal') {
+                gameState.horizontalHand.forEach(card => {
+                    const cardElement = createCardElement(card);
+                    horizontalPlayer.querySelector('.cards-container').appendChild(cardElement);
+                });
+                horizontalPlayer.querySelector('.player-label').textContent = 'Horizontal Player to play... →';
+                verticalPlayer.querySelector('.player-label').textContent = 'Vertical Player';
+            } else {
+                gameState.verticalHand.forEach(card => {
+                    const cardElement = createCardElement(card);
+                    verticalPlayer.querySelector('.cards-container').appendChild(cardElement);
+                });
+                verticalPlayer.querySelector('.player-label').textContent = 'Vertical Player to play... ↓';
+                horizontalPlayer.querySelector('.player-label').textContent = 'Horizontal Player';
+            }
+        }
+
+        function createGameBoard() {
+            const grid = document.querySelector('.grid');
+            grid.innerHTML = '';
+            
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    // Add click handler for card placement
+                    cell.addEventListener('click', () => handleCellClick(row, col));
+                    
+                    // If there's a card in this position, show it
+                    const card = gameState.gridCards[row][col];
+                    if (card) {
+                        const cardElement = createCardElement(card);
+                        cardElement.style.pointerEvents = 'none'; // Prevent clicking placed cards
+                        cell.appendChild(cardElement);
+                    }
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function handleCellClick(row, col) {
+            if (!gameState.selectedCard) return;
+            
+            const currentCard = gameState.gridCards[row][col];
+            const selectedCard = gameState.selectedCard;
+            
+            // Check if placement is valid
+            if (currentCard && currentCard.suit !== selectedCard.suit) {
+                alert('You can only replace cards with the same suit!');
+                return;
+            }
+            
+            // Place the card
+            gameState.gridCards[row][col] = { ...selectedCard };
+            
+            // Remove card from player's hand
+            const hand = gameState.currentPlayer === 'horizontal' ? gameState.horizontalHand : gameState.verticalHand;
+            const cardIndex = hand.findIndex(c => c.suit === selectedCard.suit && c.value === selectedCard.value);
+            if (cardIndex !== -1) {
+                hand.splice(cardIndex, 1);
+            }
+            
+            // Clear selection
+            selectedCard.element.classList.remove('selected');
+            gameState.selectedCard = null;
+            
+            // Update the board
+            createGameBoard();
+            
+            // Check for win
+            const winner = checkWinCondition();
+            if (winner) {
+                alert(`${winner.charAt(0).toUpperCase() + winner.slice(1)} player wins!`);
+                return;
+            }
+            
+            // Show next player button
+            const nextPlayerButton = document.querySelector('.next-player-button');
+            nextPlayerButton.style.display = 'block';
+            nextPlayerButton.textContent = `${gameState.currentPlayer === 'horizontal' ? 'Vertical' : 'Horizontal'} Player Ready?`;
+        }
+
+        // Game actions
+        function drawCard() {
+            if (gameState.deck.length === 0) return;
+            
+            // Check if we're between turns (next player button is visible)
+            const nextPlayerButton = document.querySelector('.next-player-button');
+            if (nextPlayerButton.style.display === 'block') return;
+            
+            // Check if current player's hand is already at maximum size
+            const currentHand = gameState.currentPlayer === 'horizontal' ? gameState.horizontalHand : gameState.verticalHand;
+            if (currentHand.length >= 5) return;
+            
+            const card = gameState.deck.pop();
+            if (gameState.currentPlayer === 'horizontal') {
+                gameState.horizontalHand.push(card);
+            } else {
+                gameState.verticalHand.push(card);
+            }
+            
+            // Update deck count
+            updateDeckCount();
+            
+            // Show next player button
+            nextPlayerButton.style.display = 'block';
+            nextPlayerButton.textContent = `${gameState.currentPlayer === 'horizontal' ? 'Vertical' : 'Horizontal'} Player Ready?`;
+        }
+
+        // Initialize game
+        function initGame() {
+            initializeDeck();
+            dealInitialHands();
+            createGameBoard();
+            updateDeckCount();
+            renderHands();
+        }
+
+        // Event listeners
+        document.querySelector('.deck').addEventListener('click', drawCard);
+
+        document.querySelector('.next-player-button').addEventListener('click', () => {
+            // Switch current player
+            gameState.currentPlayer = gameState.currentPlayer === 'horizontal' ? 'vertical' : 'horizontal';
+            
+            // Render the new player's hand
+            renderHands();
+            
+            // Hide the next player button
+            document.querySelector('.next-player-button').style.display = 'none';
+        });
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html> 
