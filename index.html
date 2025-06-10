@@ -310,8 +310,40 @@
             }
 
             .deck-area {
-                padding: 8px;
-                gap: 5px;
+                flex-direction: row;
+                padding: 6px;
+                gap: 8px;
+                width: fit-content;
+                margin-left: auto;
+            }
+
+            .deck-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+            }
+
+            .player-info {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px;
+                gap: 8px;
+            }
+
+            .cards-container {
+                flex: 1;
+                justify-content: flex-start;
+            }
+
+            .deck-count {
+                font-size: 0.8em;
+                margin-top: 2px;
+            }
+
+            #player1-info, #player2-info {
+                margin: 2px 0;
             }
         }
     </style>
@@ -326,26 +358,27 @@
     </div>
 
     <div class="game-container">
-        <div class="left-column">
-            <div class="player-area" id="horizontal-player">
-                <div class="player-label">Horizontal Player to play...</div>
-                <div class="cards-container"></div>
-            </div>
-
+        <div id="player1-info" class="player-info">
+            <div class="cards-container" id="player1-cards"></div>
             <div class="deck-area">
-                <div class="deck"></div>
-                <div class="deck-count">52 cards remaining</div>
-            </div>
-
-            <div class="player-area" id="vertical-player">
-                <div class="player-label">Vertical Player</div>
-                <div class="cards-container"></div>
+                <div class="deck-container">
+                    <div class="deck" id="deck"></div>
+                    <div class="deck-count">Cards: <span id="deck-count">25</span></div>
+                </div>
             </div>
         </div>
-
-        <div class="right-column">
-            <div class="game-board">
-                <div class="grid"></div>
+        
+        <div class="game-board">
+            <div class="grid" id="grid"></div>
+        </div>
+        
+        <div id="player2-info" class="player-info">
+            <div class="cards-container" id="player2-cards"></div>
+            <div class="deck-area">
+                <div class="deck-container">
+                    <div class="deck" id="deck2"></div>
+                    <div class="deck-count">Cards: <span id="deck2-count">25</span></div>
+                </div>
             </div>
         </div>
     </div>
@@ -353,327 +386,161 @@
     <button class="next-player-button">Next Player Ready?</button>
 
     <script>
-        // Game state
-        const gameState = {
-            currentPlayer: 'horizontal',
-            deck: [],
-            horizontalHand: [],
-            verticalHand: [],
-            gridCards: Array(5).fill(null).map(() => Array(5).fill(null)),
-            selectedCard: null
-        };
+        let currentPlayer = 1;
+        let selectedCard = null;
+        const deck = [];
+        let player1Cards = [];
+        let player2Cards = [];
+        const grid = document.getElementById('grid');
+        const player1CardsContainer = document.getElementById('player1-cards');
+        const player2CardsContainer = document.getElementById('player2-cards');
+        const deckElement = document.getElementById('deck');
+        const deck2Element = document.getElementById('deck2');
+        const deckCountElement = document.getElementById('deck-count');
+        const deck2CountElement = document.getElementById('deck2-count');
 
-        // Card utilities
-        function createCard(suit, value) {
-            return { suit, value };
+        // Initialize deck
+        const suits = ['♠', '♣', '♥', '♦'];
+        const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        
+        for (let suit of suits) {
+            for (let value of values) {
+                deck.push({ suit, value });
+            }
         }
 
-        function getSuitSymbol(suit) {
-            return {
-                'Hearts': '♥',
-                'Diamonds': '♦',
-                'Clubs': '♣',
-                'Spades': '♠'
-            }[suit];
+        // Shuffle deck
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
         }
 
-        function getCardValue(value) {
-            const values = {
-                'A': 1,  // Can also be 14 for high ace
-                'J': 11,
-                'Q': 12,
-                'K': 13
-            };
-            return values[value] || parseInt(value);
+        // Deal initial cards
+        for (let i = 0; i < 5; i++) {
+            player1Cards.push(deck.pop());
+            player2Cards.push(deck.pop());
         }
 
-        function isValidSequence(cards) {
-            if (cards.some(card => !card)) return false;
-            
-            // Convert card values to numbers, considering Ace as both 1 and 14
-            let values = cards.map(card => getCardValue(card.value));
-            let valuesWithHighAce = [...values];
-            
-            // Replace Ace (1) with 14 for high ace check
-            for (let i = 0; i < valuesWithHighAce.length; i++) {
-                if (valuesWithHighAce[i] === 1) {
-                    valuesWithHighAce[i] = 14;
-                }
-            }
-            
-            // Check if array is in ascending or descending order, allowing for repeated numbers
-            function isAscending(arr) {
-                for (let i = 1; i < arr.length; i++) {
-                    if (arr[i] < arr[i-1]) return false;
-                }
-                return true;
-            }
-            
-            function isDescending(arr) {
-                for (let i = 1; i < arr.length; i++) {
-                    if (arr[i] > arr[i-1]) return false;
-                }
-                return true;
-            }
-            
-            // Check both regular values and values with high ace
-            return isAscending(values) || isDescending(values) ||
-                   isAscending(valuesWithHighAce) || isDescending(valuesWithHighAce);
+        // Update deck count
+        function updateDeckCount() {
+            deckCountElement.textContent = deck.length;
+            deck2CountElement.textContent = deck.length;
         }
 
-        function checkWinCondition() {
-            // Check horizontal sequences
-            for (let row = 0; row < 5; row++) {
-                if (isValidSequence(gameState.gridCards[row])) {
-                    return 'horizontal';
-                }
-            }
-            
-            // Check vertical sequences
-            for (let col = 0; col < 5; col++) {
-                const column = gameState.gridCards.map(row => row[col]);
-                if (isValidSequence(column)) {
-                    return 'vertical';
-                }
-            }
-            
-            return null;
+        // Create grid
+        for (let i = 0; i < 25; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.addEventListener('click', () => handleCellClick(cell));
+            grid.appendChild(cell);
         }
 
-        // UI Creation
-        function createCardElement(card) {
-            const element = document.createElement('div');
-            element.className = `card ${card.suit.toLowerCase()}`;
+        // Render cards
+        function renderCards() {
+            player1CardsContainer.innerHTML = '';
+            player2CardsContainer.innerHTML = '';
             
-            const value = document.createElement('div');
-            value.className = 'card-value';
-            value.textContent = card.value;
-            
-            const suit = document.createElement('div');
-            suit.className = 'card-suit';
-            suit.textContent = getSuitSymbol(card.suit);
-            
-            element.appendChild(value);
-            element.appendChild(suit);
-
-            // Add click handler for selection
-            element.addEventListener('click', () => {
-                if (gameState.selectedCard) {
-                    gameState.selectedCard.element.classList.remove('selected');
-                }
-                element.classList.add('selected');
-                gameState.selectedCard = { ...card, element };
+            player1Cards.forEach(card => {
+                const cardElement = createCardElement(card);
+                cardElement.addEventListener('click', () => handleCardClick(cardElement, card, 1));
+                player1CardsContainer.appendChild(cardElement);
             });
             
-            return element;
+            player2Cards.forEach(card => {
+                const cardElement = createCardElement(card);
+                cardElement.addEventListener('click', () => handleCardClick(cardElement, card, 2));
+                player2CardsContainer.appendChild(cardElement);
+            });
+
+            updateDeckCount();
         }
 
-        // Game setup
-        function initializeDeck() {
-            const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
-            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        // Create card element
+        function createCardElement(card) {
+            const cardElement = document.createElement('div');
+            cardElement.className = `card ${card.suit === '♥' || card.suit === '♦' ? 'hearts' : 'spades'}`;
             
-            gameState.deck = [];
-            for (const suit of suits) {
-                for (const value of values) {
-                    gameState.deck.push(createCard(suit, value));
-                }
-            }
+            const valueElement = document.createElement('div');
+            valueElement.className = 'card-value';
+            valueElement.textContent = card.value;
             
-            // Shuffle
-            for (let i = gameState.deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [gameState.deck[i], gameState.deck[j]] = [gameState.deck[j], gameState.deck[i]];
-            }
-
-            // Place initial cards in diagonal from top-left to bottom-right
-            const diagonalPositions = [
-                [0, 0], // Top left
-                [1, 1], // Second position
-                [2, 2], // Middle
-                [3, 3], // Fourth position
-                [4, 4]  // Bottom right
-            ];
-
-            for (const [row, col] of diagonalPositions) {
-                const card = gameState.deck.pop();
-                gameState.gridCards[row][col] = card;
-            }
+            const suitElement = document.createElement('div');
+            suitElement.className = 'card-suit';
+            suitElement.textContent = card.suit;
+            
+            cardElement.appendChild(valueElement);
+            cardElement.appendChild(suitElement);
+            
+            return cardElement;
         }
 
-        function dealInitialHands() {
-            for (let i = 0; i < 5; i++) {
-                gameState.horizontalHand.push(gameState.deck.pop());
-                gameState.verticalHand.push(gameState.deck.pop());
+        // Handle card click
+        function handleCardClick(cardElement, card, player) {
+            if (player !== currentPlayer) return;
+            
+            if (selectedCard) {
+                selectedCard.classList.remove('selected');
             }
-        }
-
-        function updateDeckCount() {
-            document.querySelector('.deck-count').textContent = 
-                `${gameState.deck.length} cards remaining`;
-        }
-
-        function renderHands() {
-            const horizontalPlayer = document.getElementById('horizontal-player');
-            const verticalPlayer = document.getElementById('vertical-player');
             
-            // Clear existing cards
-            horizontalPlayer.querySelector('.cards-container').innerHTML = '';
-            verticalPlayer.querySelector('.cards-container').innerHTML = '';
-            
-            // Hide both hands initially
-            horizontalPlayer.style.display = 'none';
-            verticalPlayer.style.display = 'none';
-            
-            // Show and render current player's hand
-            if (gameState.currentPlayer === 'horizontal') {
-                horizontalPlayer.style.display = 'block';
-                gameState.horizontalHand.forEach(card => {
-                    const cardElement = createCardElement(card);
-                    horizontalPlayer.querySelector('.cards-container').appendChild(cardElement);
-                });
-                horizontalPlayer.querySelector('.player-label').textContent = 'Horizontal Player to play... →';
-                verticalPlayer.querySelector('.player-label').textContent = 'Vertical Player';
+            if (selectedCard === cardElement) {
+                selectedCard = null;
             } else {
-                verticalPlayer.style.display = 'block';
-                gameState.verticalHand.forEach(card => {
-                    const cardElement = createCardElement(card);
-                    verticalPlayer.querySelector('.cards-container').appendChild(cardElement);
-                });
-                verticalPlayer.querySelector('.player-label').textContent = 'Vertical Player to play... ↓';
-                horizontalPlayer.querySelector('.player-label').textContent = 'Horizontal Player';
+                selectedCard = cardElement;
+                cardElement.classList.add('selected');
             }
         }
 
-        function createGameBoard() {
-            const grid = document.querySelector('.grid');
-            grid.innerHTML = '';
+        // Handle cell click
+        function handleCellClick(cell) {
+            if (!selectedCard) return;
             
-            for (let row = 0; row < 5; row++) {
-                for (let col = 0; col < 5; col++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.dataset.row = row;
-                    cell.dataset.col = col;
-                    
-                    // Add click handler for card placement
-                    cell.addEventListener('click', () => handleCellClick(row, col));
-                    
-                    // If there's a card in this position, show it
-                    const card = gameState.gridCards[row][col];
-                    if (card) {
-                        const cardElement = createCardElement(card);
-                        cardElement.style.pointerEvents = 'none'; // Prevent clicking placed cards
-                        cell.appendChild(cardElement);
-                    }
-                    
-                    grid.appendChild(cell);
-                }
-            }
-        }
-
-        function handleCellClick(row, col) {
-            if (!gameState.selectedCard) return;
+            const cards = currentPlayer === 1 ? player1Cards : player2Cards;
+            const cardIndex = Array.from(selectedCard.parentElement.children).indexOf(selectedCard);
             
-            const currentCard = gameState.gridCards[row][col];
-            const selectedCard = gameState.selectedCard;
+            if (cardIndex === -1) return;
             
-            // Check if placement is valid
-            if (currentCard && currentCard.suit !== selectedCard.suit) {
-                alert('You can only replace cards with the same suit!');
-                return;
-            }
+            // Place card in cell
+            const card = cards[cardIndex];
+            cell.innerHTML = '';
             
-            // Place the card
-            gameState.gridCards[row][col] = { ...selectedCard };
+            const cardElement = createCardElement(card);
+            cell.appendChild(cardElement);
             
             // Remove card from player's hand
-            const hand = gameState.currentPlayer === 'horizontal' ? gameState.horizontalHand : gameState.verticalHand;
-            const cardIndex = hand.findIndex(c => c.suit === selectedCard.suit && c.value === selectedCard.value);
-            if (cardIndex !== -1) {
-                hand.splice(cardIndex, 1);
+            cards.splice(cardIndex, cardIndex + 1);
+            
+            // Draw new card
+            if (deck.length > 0) {
+                cards.push(deck.pop());
             }
             
-            // Clear selection
-            selectedCard.element.classList.remove('selected');
-            gameState.selectedCard = null;
+            // Switch players
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            selectedCard = null;
             
-            // Update the board
-            createGameBoard();
-            
-            // Hide both players' hands immediately
-            document.getElementById('horizontal-player').style.display = 'none';
-            document.getElementById('vertical-player').style.display = 'none';
-            
-            // Check for win
-            const winner = checkWinCondition();
-            if (winner) {
-                alert(`${winner.charAt(0).toUpperCase() + winner.slice(1)} player wins!`);
-                return;
+            // Update UI
+            renderCards();
+        }
+
+        // Add click event to deck
+        deckElement.addEventListener('click', () => {
+            if (currentPlayer === 1 && deck.length > 0) {
+                player1Cards.push(deck.pop());
+                currentPlayer = 2;
+                renderCards();
             }
-            
-            // Show next player button
-            const nextPlayerButton = document.querySelector('.next-player-button');
-            nextPlayerButton.style.display = 'block';
-            nextPlayerButton.textContent = `${gameState.currentPlayer === 'horizontal' ? 'Vertical' : 'Horizontal'} Player Ready?`;
-        }
-
-        // Game actions
-        function drawCard() {
-            if (gameState.deck.length === 0) return;
-            
-            // Check if we're between turns (next player button is visible)
-            const nextPlayerButton = document.querySelector('.next-player-button');
-            if (nextPlayerButton.style.display === 'block') return;
-            
-            // Check if current player's hand is already at maximum size
-            const currentHand = gameState.currentPlayer === 'horizontal' ? gameState.horizontalHand : gameState.verticalHand;
-            if (currentHand.length >= 5) return;
-            
-            const card = gameState.deck.pop();
-            if (gameState.currentPlayer === 'horizontal') {
-                gameState.horizontalHand.push(card);
-            } else {
-                gameState.verticalHand.push(card);
-            }
-            
-            // Update deck count
-            updateDeckCount();
-
-            // Hide both player hands immediately
-            document.getElementById('horizontal-player').style.display = 'none';
-            document.getElementById('vertical-player').style.display = 'none';
-            
-            // Show next player button
-            nextPlayerButton.style.display = 'block';
-            nextPlayerButton.textContent = `${gameState.currentPlayer === 'horizontal' ? 'Vertical' : 'Horizontal'} Player Ready?`;
-        }
-
-        // Initialize game
-        function initGame() {
-            initializeDeck();
-            dealInitialHands();
-            createGameBoard();
-            updateDeckCount();
-            renderHands();
-        }
-
-        // Event listeners
-        document.querySelector('.deck').addEventListener('click', drawCard);
-
-        document.querySelector('.next-player-button').addEventListener('click', () => {
-            // Switch current player
-            gameState.currentPlayer = gameState.currentPlayer === 'horizontal' ? 'vertical' : 'horizontal';
-            
-            // Render the new player's hand
-            renderHands();
-            
-            // Hide the next player button
-            document.querySelector('.next-player-button').style.display = 'none';
         });
 
-        // Start the game
-        initGame();
+        deck2Element.addEventListener('click', () => {
+            if (currentPlayer === 2 && deck.length > 0) {
+                player2Cards.push(deck.pop());
+                currentPlayer = 1;
+                renderCards();
+            }
+        });
+
+        // Initial render
+        renderCards();
     </script>
 </body>
 </html> 
