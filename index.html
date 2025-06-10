@@ -244,8 +244,17 @@
         }
 
         @media (max-width: 767px) {
+            body {
+                padding: 5px;
+            }
+
             .game-container {
-                padding: 10px 5px;
+                padding: 5px;
+                gap: 10px;
+            }
+
+            h1 {
+                display: none;
             }
 
             .grid {
@@ -259,10 +268,27 @@
                 padding: 10px;
                 transform: scale(0.95);
                 transform-origin: top center;
+                margin-top: 0;
             }
 
             .player-info {
-                padding: 10px;
+                padding: 8px;
+                margin: 5px 0;
+                font-size: 0.9em;
+            }
+
+            .player-info button {
+                padding: 5px 10px;
+                margin: 3px;
+                font-size: 0.9em;
+            }
+
+            #player1-info {
+                margin-bottom: 5px;
+            }
+
+            #player2-info {
+                margin-top: 5px;
             }
         }
     </style>
