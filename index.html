@@ -246,49 +246,72 @@
         @media (max-width: 767px) {
             body {
                 padding: 5px;
+                align-items: center;
             }
 
-            .game-container {
-                padding: 5px;
-                gap: 10px;
-            }
-
-            h1 {
+            .header {
                 display: none;
             }
 
+            .game-container {
+                padding: 0;
+                gap: 8px;
+                margin: 0;
+            }
+
             .grid {
-                grid-template-columns: repeat(5, 60px);
-                grid-template-rows: repeat(5, 84px);
-                gap: 5px;
-                padding: 10px;
+                grid-template-columns: repeat(5, 58px);
+                grid-template-rows: repeat(5, 82px);
+                gap: 4px;
+                padding: 8px;
             }
 
             .game-board {
-                padding: 10px;
-                transform: scale(0.95);
+                padding: 8px;
+                transform: scale(0.98);
                 transform-origin: top center;
-                margin-top: 0;
+                margin: 0;
             }
 
             .player-info {
-                padding: 8px;
-                margin: 5px 0;
+                padding: 6px;
+                margin: 2px 0;
                 font-size: 0.9em;
             }
 
             .player-info button {
-                padding: 5px 10px;
-                margin: 3px;
+                padding: 4px 8px;
+                margin: 2px;
                 font-size: 0.9em;
             }
 
+            .card {
+                width: 58px;
+                height: 82px;
+            }
+
+            .deck {
+                width: 58px;
+                height: 82px;
+            }
+
+            .cards-container {
+                gap: 4px;
+                min-height: 82px;
+                padding: 3px;
+            }
+
             #player1-info {
-                margin-bottom: 5px;
+                margin-bottom: 2px;
             }
 
             #player2-info {
-                margin-top: 5px;
+                margin-top: 2px;
+            }
+
+            .deck-area {
+                padding: 8px;
+                gap: 5px;
             }
         }
     </style>
